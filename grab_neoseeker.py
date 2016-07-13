@@ -27,8 +27,8 @@ class Options:
 
 class NeoSeekerGrabber:
 
-    def __init__(self, url, dirname, options):
-        self.url = url
+    def __init__(self, faq_url, dirname, options):
+        self.faq_url = url
         self.dirname = dirname
         self.options = options
         self.make_target_directory()
@@ -63,10 +63,10 @@ class NeoSeekerGrabber:
         data = r.content # get binary content; ignore encoding
         return data
     
-    def grab_faqs(self, url):
+    def grab_faqs(self):
         """ Given an URL to a list of FAQs, download all these FAQs. """
         print("Grabbing:", url, "...")
-        faq_source = self.fetch_url(url, url)
+        faq_source = self.fetch_url(self.faq_url, self.faq_url)
 
         if self.options.debug:
             print("#DEBUG: Writing FAQ source file...")
@@ -74,11 +74,11 @@ class NeoSeekerGrabber:
             with open(path, 'wb') as f:
                 f.write(faq_source)
 
-        faq_urls = self.collect_faqs(faq_source) # BeautifulSoup objects
-        for link in faq_urls: 
-            self.grab_faq(link, url)
+        urls = self.collect_faqs(faq_source) # BeautifulSoup objects
+        for link in urls: 
+            self.grab_faq(link, self.faq_url)
 
-        if not faq_urls:
+        if not urls:
             print("No downloadable FAQs found.")
 
     def grab_faq(self, link, origin):
@@ -209,5 +209,5 @@ if __name__ == "__main__":
 
     grabber = NeoSeekerGrabber(url, dirname, options)
 
-    grabber.grab_faqs(url)
+    grabber.grab_faqs()
 
