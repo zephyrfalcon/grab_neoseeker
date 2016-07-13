@@ -2,6 +2,7 @@
 
 import getopt
 import os
+import re
 import sys
 import urllib.request
 from urllib.parse import urlparse
@@ -52,10 +53,12 @@ class NeoSeekerGrabber:
     def grab_faqs(self, url):
         print("Grabbing:", url, "...")
         faq_source = fetch_url(url, url)
-        # DEBUG
-        path = os.path.join(self.dirname, "00_faqs.html")
-        with open(path, 'wb') as f:
-            f.write(faq_source)
+
+        if self.options.debug:
+            print("#DEBUG: Writing FAQ source file...")
+            path = os.path.join(self.dirname, "00_faqs.html")
+            with open(path, 'wb') as f:
+                f.write(faq_source)
 
         faq_urls = self.collect_faqs(faq_source) # BeautifulSoup objects
         for link in faq_urls: 
@@ -138,6 +141,14 @@ class NeoSeekerGrabber:
 
         return ("unknown", "")
 
+def determine_dir_name(url):
+    re_name = re.compile("/(.*?)/faqs")
+    url_parts = urlparse(url)
+    m = re_name.search(url_parts.path)
+    if m is not None:
+        return m.group(1)
+    else:
+        return "unknown"
 
 if __name__ == "__main__":
 
@@ -147,8 +158,9 @@ if __name__ == "__main__":
     if args[1:]:
         dirname = args[1]
     else:
-        dirname = "target"
-        # TODO: try to figure out reasonable directory name from URL
+        # try to figure out reasonable directory name from URL
+        dirname = determine_dir_name(url)
+        print("Storing in directory:", dirname)
 
     options = Options()
     # TODO: set options from command line arguments...

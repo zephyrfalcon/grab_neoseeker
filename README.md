@@ -1,1 +1,2 @@
-NeoSeeker FAQ grabber.
+NeoSeeker FAQ grabber. More info later...
+
