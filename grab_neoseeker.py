@@ -129,8 +129,12 @@ class NeoSeekerGrabber:
                      and not link['href'].endswith("/faqs/")]
             all_links.extend(links)
 
-        print("Found these links:")
-        for idx, link in enumerate(all_links): print(idx, link)
+        if self.options.debug:
+            print("Found these links:")
+            for idx, link in enumerate(all_links): 
+                print(idx+1, link)
+        else:
+            print("Found", len(all_links), "FAQs")
         return all_links
 
     def determine_file_type(self, html):
