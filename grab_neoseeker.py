@@ -10,16 +10,19 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup as BS
 import requests
 
-class Options:
-    debug = False
-
 
 def filename_from_url(url):
+    """ Extract the base filename from an URL.
+        E.g. "http://faqs.neoseeker.com/Games/DS/foobar.txt" => "foobar.txt"
+    """
     url_parts = urlparse(url)
     return os.path.basename(url_parts.path)
 
-# dodgy default cookie. may need to be changed
+# dodgy default cookie. may need to be replaced
 DEFAULT_COOKIE = "ns=1t2ilpdrkr49s1tbl9rgp801b5;_gaost=.nv=1.r=www_d_google_d_com.rk=null;_gaos=.gaos_r=www_d_google_d_com.mc=(no)|(no)|(no).gaos_k=null.pc=1;_nrlsk=nrlsk_c=3.et=1466645187; _gat=1;_ga=GA1.2.389298541.1466645409"
+
+class Options:
+    debug = False
 
 
 class NeoSeekerGrabber:
@@ -35,6 +38,10 @@ class NeoSeekerGrabber:
             os.makedirs(self.dirname)
 
     def fetch_url(self, url, origin):
+        """ Fetch the contents of the given URL, using HTTP GET and custom
+            headers to keep NeoSeeker happy. Returns the contents as bytes
+            (encoding is ignored). 
+        """
         headers = {
             "Referer": origin, 
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -57,6 +64,7 @@ class NeoSeekerGrabber:
         return data
     
     def grab_faqs(self, url):
+        """ Given an URL to a list of FAQs, download all these FAQs. """
         print("Grabbing:", url, "...")
         faq_source = self.fetch_url(url, url)
 
@@ -70,7 +78,12 @@ class NeoSeekerGrabber:
         for link in faq_urls: 
             self.grab_faq(link, url)
 
+        if not faq_urls:
+            print("No downloadable FAQs found.")
+
     def grab_faq(self, link, origin):
+        """ Grab a FAQ, given a BeautifulSoup Element object (an <a> link).
+            The origin URL needs to be specified as well. """
         print("Grabbing:", link, "...")
         url = link['href']
         data = self.fetch_url(url, origin)
@@ -99,6 +112,10 @@ class NeoSeekerGrabber:
             f.write(src_data)
 
     def collect_faqs(self, html):
+        """ Search for all FAQs in the given HTML (a bytes object) and return
+            a list of them. Each FAQ link is represented as a BeautifulSoup
+            Element object. 
+        """
         soup = BS(html, 'html.parser')
         all_links = []
 
@@ -106,9 +123,8 @@ class NeoSeekerGrabber:
         # them all
         for faq_table in soup.find_all(class_="table-list"):
             links = faq_table.find_all('a')
-            print("###", links)
             links = [link for link in links 
-                     if link.has_key('href') 
+                     if link.has_attr('href') 
                      and "/faqs/" in link['href']
                      and not link['href'].endswith("/faqs/")]
             all_links.extend(links)
@@ -156,6 +172,10 @@ class NeoSeekerGrabber:
         return ("unknown", "")
 
 def determine_dir_name(url):
+    """ Given an URL to a list of FAQs, try to determine a directory name from
+        it. This should be the "id" of the game, e.g.
+        "http://www.neoseeker.com/pokemon-white/faqs/" => "pokemon-white"
+    """
     re_name = re.compile("/(.*?)/faqs")
     url_parts = urlparse(url)
     m = re_name.search(url_parts.path)
