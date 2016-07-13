@@ -8,8 +8,26 @@ from urllib.parse import urlparse
 #
 from bs4 import BeautifulSoup as BS
 
-def fetch_url(url):
-    u = urllib.request.urlopen(url)
+USER_AGENT = "Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19"
+
+def fetch_url(url, origin):
+    headers = {
+        #"Host": "www.neoseeker.com", 
+        "Referer": origin, 
+        #"User-Agent": USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        #"Accept-Encoding": "gzip, deflate, sdch",
+        "Accept-Language": "en-US,en;q=0.8,de;q=0.6,nl;q=0.4",
+        "Cache-Control": "max-age=0",
+        "Connection": "keep-alive",
+        # XXX cookie might need to be replaced
+        "Cookie": "ns=1t2ilpdrkr49s1tbl9rgp801b5;_gaost=.nv=1.r=www_d_google_d_com.rk=null;_gaos=.gaos_r=www_d_google_d_com.mc=(no)|(no)|(no).gaos_k=null.pc=1;_nrlsk=nrlsk_c=3.et=1466645187; _gat=1;_ga=GA1.2.389298541.1466645409",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36",
+    }
+    print("Fetching:", url, "with origin:", origin)
+    req = urllib.request.Request(url, headers=headers, origin_req_host=origin)
+    u = urllib.request.urlopen(req)
     data = u.read() # assume it's small enough that we can read it all at once
     return data
 
@@ -32,7 +50,7 @@ class NeoSeekerGrabber:
 
     def grab_faqs(self, url):
         print("Grabbing:", url, "...")
-        faq_source = fetch_url(url)
+        faq_source = fetch_url(url, url)
         # DEBUG
         path = os.path.join(self.dirname, "00_faqs.html")
         with open(path, 'wb') as f:
@@ -40,12 +58,12 @@ class NeoSeekerGrabber:
 
         faq_urls = self.collect_faqs(faq_source) # BeautifulSoup objects
         for link in faq_urls: 
-            self.grab_faq(link)
+            self.grab_faq(link, url)
 
-    def grab_faq(self, link):
+    def grab_faq(self, link, origin):
         print("Grabbing:", link, "...")
         url = link['href']
-        data = fetch_url(url)
+        data = fetch_url(url, origin)
         print(len(data), "bytes")
 
         # DEBUG: write source to file
@@ -61,7 +79,7 @@ class NeoSeekerGrabber:
             # TODO: maybe if it's unknown, the FAQ is in HTML, so we need to
             # store that...? 
 
-        src_data = fetch_url(resource) # raw data
+        src_data = fetch_url(resource, url) # raw data
         basename = filename_from_url(resource)
         out_path = os.path.join(self.dirname, basename)
         print("Writing:", basename, "...")
