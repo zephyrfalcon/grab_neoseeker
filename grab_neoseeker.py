@@ -8,7 +8,8 @@ from urllib.parse import urlparse
 #
 from bs4 import BeautifulSoup as BS
 
-USER_AGENT = "Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19"
+class Options:
+    debug = False
 
 def fetch_url(url, origin):
     headers = {
@@ -38,10 +39,10 @@ def filename_from_url(url):
 
 class NeoSeekerGrabber:
 
-    def __init__(self, url, dirname):
+    def __init__(self, url, dirname, options):
         self.url = url
         self.dirname = dirname
-        self.options = {}
+        self.options = options
         self.make_target_directory()
 
     def make_target_directory(self):
@@ -66,20 +67,22 @@ class NeoSeekerGrabber:
         data = fetch_url(url, origin)
         print(len(data), "bytes")
 
-        # DEBUG: write source to file
-        basename = filename_from_url(url) 
-        path = os.path.join(self.dirname, basename)
-        with open(path, 'wb') as f:
-            f.write(data)
+        if self.options.debug:
+            basename = filename_from_url(url) 
+            print("Writing source to file:", basename)
+            path = os.path.join(self.dirname, basename)
+            with open(path, 'wb') as f:
+                f.write(data)
 
         filetype, resource = self.determine_file_type(data)
         if filetype == "unknown":
             print("Unknown file type; skipping")
             return
-            # TODO: maybe if it's unknown, the FAQ is in HTML, so we need to
-            # store that...? 
-
-        src_data = fetch_url(resource, url) # raw data
+        elif filetype == "html":
+            resource = url # store the HTML page as-is
+            src_data = data
+        else:
+            src_data = fetch_url(resource, url) # raw data
         basename = filename_from_url(resource)
         out_path = os.path.join(self.dirname, basename)
         print("Writing:", basename, "...")
@@ -123,6 +126,9 @@ class NeoSeekerGrabber:
             src_url = img['src']
             return ("png", src_url)
 
+        if b"faqtable" in html or b"author_area" in html:
+            return ("html", None)
+
         return ("unknown", "")
 
 
@@ -137,7 +143,10 @@ if __name__ == "__main__":
         dirname = "target"
         # TODO: try to figure out reasonable directory name from URL
 
-    grabber = NeoSeekerGrabber(url, dirname)
+    options = Options()
+    # TODO: set options from command line arguments...
+
+    grabber = NeoSeekerGrabber(url, dirname, options)
 
     grabber.grab_faqs(url)
 
