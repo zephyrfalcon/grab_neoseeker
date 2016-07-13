@@ -39,7 +39,7 @@ class NeoSeekerGrabber:
             f.write(faq_source)
 
         faq_urls = self.collect_faqs(faq_source) # BeautifulSoup objects
-        for link in faq_urls[:1]: # FIXME
+        for link in faq_urls: 
             self.grab_faq(link)
 
     def grab_faq(self, link):
@@ -58,6 +58,8 @@ class NeoSeekerGrabber:
         if filetype == "unknown":
             print("Unknown file type; skipping")
             return
+            # TODO: maybe if it's unknown, the FAQ is in HTML, so we need to
+            # store that...? 
 
         src_data = fetch_url(resource) # raw data
         basename = filename_from_url(resource)
@@ -74,7 +76,7 @@ class NeoSeekerGrabber:
                  if "/faqs/" in link['href'] 
                  and not link['href'].endswith("/faqs/")]
         print("Found these links:")
-        for link in links: print(link)
+        for idx, link in enumerate(links): print(idx, link)
         return links
 
     def determine_file_type(self, html):
@@ -88,6 +90,20 @@ class NeoSeekerGrabber:
             links = [link for link in links if "view source" in link.text]
             src_url = links[0]['href']
             return ("text", src_url)
+
+        if b"(GIF)" in html:
+            soup = BS(html, 'html.parser')
+            div = soup.find('div', id='faqtxt')
+            img = div.find('img')
+            src_url = img['src']
+            return ("gif", src_url)
+
+        if b"(PNG)" in html:
+            soup = BS(html, 'html.parser')
+            div = soup.find('div', id='faqtxt')
+            img = div.find('img')
+            src_url = img['src']
+            return ("png", src_url)
 
         return ("unknown", "")
 
