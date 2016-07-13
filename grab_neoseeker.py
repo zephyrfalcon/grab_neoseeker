@@ -26,7 +26,7 @@ def fetch_url(url, origin):
         "Upgrade-Insecure-Requests": "1",
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36",
     }
-    print("Fetching:", url, "with origin:", origin)
+    #print("Fetching:", url, "with origin:", origin)
     req = urllib.request.Request(url, headers=headers, origin_req_host=origin)
     u = urllib.request.urlopen(req)
     data = u.read() # assume it's small enough that we can read it all at once
@@ -76,7 +76,7 @@ class NeoSeekerGrabber:
 
         filetype, resource = self.determine_file_type(data)
         if filetype == "unknown":
-            print("Unknown file type; skipping")
+            print("*** Unknown file type; skipping")
             return
         elif filetype == "html":
             resource = url # store the HTML page as-is
@@ -125,6 +125,13 @@ class NeoSeekerGrabber:
             img = div.find('img')
             src_url = img['src']
             return ("png", src_url)
+        
+        if b"(PDF)" in html:
+            soup = BS(html, 'html.parser')
+            div = soup.find('div', id='faqtxt')
+            img = div.find('embed')
+            src_url = img['src']
+            return ("pdf", src_url)
 
         if b"faqtable" in html or b"author_area" in html:
             return ("html", None)
