@@ -94,14 +94,22 @@ class NeoSeekerGrabber:
 
     def collect_faqs(self, html):
         soup = BS(html, 'html.parser')
-        faq_table = soup.find(class_="table-list")
-        links = faq_table.find_all('a')
-        links = [link for link in links 
-                 if "/faqs/" in link['href'] 
-                 and not link['href'].endswith("/faqs/")]
+        all_links = []
+
+        # there can be multiple sections of FAQs (e.g. non-English ones); scan
+        # them all
+        for faq_table in soup.find_all(class_="table-list"):
+            links = faq_table.find_all('a')
+            print("###", links)
+            links = [link for link in links 
+                     if link.has_key('href') 
+                     and "/faqs/" in link['href']
+                     and not link['href'].endswith("/faqs/")]
+            all_links.extend(links)
+
         print("Found these links:")
-        for idx, link in enumerate(links): print(idx, link)
-        return links
+        for idx, link in enumerate(all_links): print(idx, link)
+        return all_links
 
     def determine_file_type(self, html):
         """ Given the source HTML of a FAQ, determine the type of the actual
