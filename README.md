@@ -14,12 +14,13 @@ Just run:
 ./grab_neoseeker.py http://www.neoseeker.com/example-game/faqs/
 ```
 
-This will download all the FAQs for the given game (this includes plain
-text files, HTML files, PDFs, and images like GIFs and PNGs). It does
-**NOT** download videos. The script will automatically create a
-directory `example-game` to store the downloaded files in. If you
-specify another argument, this is taken to be the directory name
-instead:
+The URL must point to a list of FAQs (as opposed to the main page for a
+game); such an URL will usually end in `"/faqs/"`. This will download all the FAQs
+for the given game (this includes plain text files, HTML files, PDFs,
+and images like GIFs and PNGs). It does **NOT** download videos. The
+script will automatically create a directory `example-game` to store the
+downloaded files in. If you specify another argument, this is taken to
+be the directory name instead:
 
 ```
 ./grab_neoseeker.py http://www.neoseeker.com/example-game/faqs/ my-stuff
