@@ -115,7 +115,7 @@ class NeoSeekerGrabber:
             f.write(src_data)
 
     def collect_faqs(self, html):
-        """ Search for all FAQs in the given HTML (a bytes object) and return
+        """ Search for all FAQs in the given HTML (a string) and return
             a list of them. Each FAQ link is represented as a BeautifulSoup
             Element object. 
         """
