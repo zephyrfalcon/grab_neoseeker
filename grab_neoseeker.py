@@ -39,8 +39,8 @@ class NeoSeekerGrabber:
 
     def fetch_url(self, url, origin):
         """ Fetch the contents of the given URL, using HTTP GET and custom
-            headers to keep NeoSeeker happy. Returns the contents as bytes
-            (encoding is ignored). 
+            headers to keep NeoSeeker happy. Return a tuple (content,
+            encoding).       
         """
         headers = {
             "Referer": origin, 
@@ -60,18 +60,19 @@ class NeoSeekerGrabber:
         data = u.read() # assume it's small enough that we can read it all at once
         '''
         r = requests.get(url, headers=headers)
-        data = r.content # get binary content; ignore encoding
-        return data
+        #print(url, "has encoding:", r.encoding)
+        #data = r.content # get binary content; ignore encoding
+        return r.text, r.encoding
     
     def grab_faqs(self):
         """ Given an URL to a list of FAQs, download all these FAQs. """
         print("Grabbing:", url, "...")
-        faq_source = self.fetch_url(self.faq_url, self.faq_url)
+        faq_source, encoding = self.fetch_url(self.faq_url, self.faq_url)
 
         if self.options.debug:
             print("#DEBUG: Writing FAQ source file...")
             path = os.path.join(self.dirname, "00_faqs.html")
-            with open(path, 'wb') as f:
+            with open(path, 'w', encoding=encoding) as f:
                 f.write(faq_source)
 
         urls = self.collect_faqs(faq_source) # BeautifulSoup objects
@@ -86,14 +87,15 @@ class NeoSeekerGrabber:
             The origin URL needs to be specified as well. """
         print("Grabbing:", link, "...")
         url = link['href']
-        data = self.fetch_url(url, origin)
-        print(len(data), "bytes")
+        data, encoding = self.fetch_url(url, origin)
+        print("%d characters; encoding %s (%d raw bytes)" % (
+              len(data), encoding, len(bytes(data, encoding))))
 
         if self.options.debug:
             basename = filename_from_url(url) 
             print("Writing source to file:", basename)
             path = os.path.join(self.dirname, basename)
-            with open(path, 'wb') as f:
+            with open(path, 'w', encoding=encoding) as f:
                 f.write(data)
 
         filetype, resource = self.determine_file_type(data)
@@ -104,11 +106,12 @@ class NeoSeekerGrabber:
             resource = url # store the HTML page as-is
             src_data = data
         else:
-            src_data = self.fetch_url(resource, url) # raw data
+            src_data, encoding = self.fetch_url(resource, url) # raw data
         basename = filename_from_url(resource)
         out_path = os.path.join(self.dirname, basename)
-        print("Writing:", basename, "...")
-        with open(out_path, 'wb') as f:
+        #print("Writing:", basename, "...")
+        print("Writing: %s (%s)..." % (basename, encoding))
+        with open(out_path, 'w', encoding=encoding) as f:
             f.write(src_data)
 
     def collect_faqs(self, html):
@@ -142,35 +145,35 @@ class NeoSeekerGrabber:
             file being linked to (text, HTML, GIF, PNG, etc); return this type
             as a string, plus the URL to the resource. 
         """
-        if b"view source" in html:
+        if "view source" in html:
             soup = BS(html, 'html.parser')
             links = soup.find_all('a')
             links = [link for link in links if "view source" in link.text]
             src_url = links[0]['href']
             return ("text", src_url)
 
-        if b"(GIF)" in html:
+        if "(GIF)" in html:
             soup = BS(html, 'html.parser')
             div = soup.find('div', id='faqtxt')
             img = div.find('img')
             src_url = img['src']
             return ("gif", src_url)
 
-        if b"(PNG)" in html:
+        if "(PNG)" in html:
             soup = BS(html, 'html.parser')
             div = soup.find('div', id='faqtxt')
             img = div.find('img')
             src_url = img['src']
             return ("png", src_url)
         
-        if b"(PDF)" in html:
+        if "(PDF)" in html:
             soup = BS(html, 'html.parser')
             div = soup.find('div', id='faqtxt')
             img = div.find('embed')
             src_url = img['src']
             return ("pdf", src_url)
 
-        if b"faqtable" in html or b"author_area" in html:
+        if "faqtable" in html or b"author_area" in html:
             return ("html", None)
 
         return ("unknown", "")
