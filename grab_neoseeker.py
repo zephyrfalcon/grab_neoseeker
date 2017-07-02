@@ -23,6 +23,7 @@ DEFAULT_COOKIE = "ns=1t2ilpdrkr49s1tbl9rgp801b5;_gaost=.nv=1.r=www_d_google_d_co
 
 class Options:
     debug = False
+    only_binaries = False
 
 
 class NeoSeekerGrabber:
@@ -193,7 +194,7 @@ def determine_dir_name(url):
 
 if __name__ == "__main__":
 
-    opts, args = getopt.getopt(sys.argv[1:], "d")
+    opts, args = getopt.getopt(sys.argv[1:], "bd")
     url = args[0]
     assert "/faqs" in url, "This does not look like a NeoSeeker FAQs page."
     if args[1:]:
@@ -209,6 +210,8 @@ if __name__ == "__main__":
     for o, a in opts:
         if o == "-d":
             options.debug = True
+        elif o == "-b":
+            options.only_binaries = True
 
     grabber = NeoSeekerGrabber(url, dirname, options)
 
