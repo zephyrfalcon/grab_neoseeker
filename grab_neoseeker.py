@@ -38,7 +38,7 @@ class NeoSeekerGrabber:
         if not os.path.exists(self.dirname):
             os.makedirs(self.dirname)
 
-    def fetch_url(self, url, origin):
+    def fetch_url(self, url, origin, isbinary=False):
         """ Fetch the contents of the given URL, using HTTP GET and custom
             headers to keep NeoSeeker happy. Return a tuple (content,
             encoding).       
@@ -55,15 +55,13 @@ class NeoSeekerGrabber:
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36",
         }
         #print("Fetching:", url, "with origin:", origin)
-        '''
-        req = urllib.request.Request(url, headers=headers) 
-        u = urllib.request.urlopen(req)
-        data = u.read() # assume it's small enough that we can read it all at once
-        '''
         r = requests.get(url, headers=headers)
         #print(url, "has encoding:", r.encoding)
         #data = r.content # get binary content; ignore encoding
-        return r.text, r.encoding
+        if isbinary:
+            return r.content, None
+        else:
+            return r.text, r.encoding
     
     def grab_faqs(self):
         """ Given an URL to a list of FAQs, download all these FAQs. """
@@ -99,7 +97,12 @@ class NeoSeekerGrabber:
             with open(path, 'w', encoding=encoding) as f:
                 f.write(data)
 
-        filetype, resource = self.determine_file_type(data)
+        filetype, resource, isbinary = self.determine_file_type(data)
+
+        if self.options.only_binaries and not isbinary:
+            print("File", url, "is not a binary; skipped")
+            return
+
         if filetype == "unknown":
             print("*** Unknown file type; skipping")
             return
@@ -107,13 +110,21 @@ class NeoSeekerGrabber:
             resource = url # store the HTML page as-is
             src_data = data
         else:
-            src_data, encoding = self.fetch_url(resource, url) # raw data
+            src_data, encoding = self.fetch_url(resource, url, isbinary) # raw data
+            # if isbinary is True, src_data will be a bytes object
+
+        print("Downloaded", len(src_data), "bytes -- ", type(src_data))
+        print(repr(src_data[:20]))
         basename = filename_from_url(resource)
         out_path = os.path.join(self.dirname, basename)
         #print("Writing:", basename, "...")
         print("Writing: %s (%s)..." % (basename, encoding))
-        with open(out_path, 'w', encoding=encoding) as f:
-            f.write(src_data)
+        if isbinary:
+            with open(out_path, 'wb') as f:
+                f.write(src_data)
+        else:
+            with open(out_path, 'w', encoding=encoding) as f:
+                f.write(src_data)
 
     def collect_faqs(self, html):
         """ Search for all FAQs in the given HTML (a string) and return
@@ -143,41 +154,50 @@ class NeoSeekerGrabber:
 
     def determine_file_type(self, html):
         """ Given the source HTML of a FAQ, determine the type of the actual
-            file being linked to (text, HTML, GIF, PNG, etc); return this type
-            as a string, plus the URL to the resource. 
+            file being linked to (text, HTML, GIF, PNG, etc); return a 3-tuple
+            (type, url, isbinary) with the type as a string, the URL to the
+            resource, and a boolean indicating whether this file is considered 
+            "binary" or not. 
         """
         if "view source" in html:
             soup = BS(html, 'html.parser')
             links = soup.find_all('a')
             links = [link for link in links if "view source" in link.text]
             src_url = links[0]['href']
-            return ("text", src_url)
+            return ("text", src_url, False)
 
         if "(GIF)" in html:
             soup = BS(html, 'html.parser')
             div = soup.find('div', id='faqtxt')
             img = div.find('img')
             src_url = img['src']
-            return ("gif", src_url)
+            return ("gif", src_url, True)
 
         if "(PNG)" in html:
             soup = BS(html, 'html.parser')
             div = soup.find('div', id='faqtxt')
             img = div.find('img')
             src_url = img['src']
-            return ("png", src_url)
+            return ("png", src_url, True)
+
+        if "(JPG)" in html:
+            soup = BS(html, 'html.parser')
+            div = soup.find('div', id='faqtxt')
+            img = div.find('img')
+            src_url = img['src']
+            return ("jpg", src_url, True)
         
         if "(PDF)" in html:
             soup = BS(html, 'html.parser')
             div = soup.find('div', id='faqtxt')
             img = div.find('embed')
             src_url = img['src']
-            return ("pdf", src_url)
+            return ("pdf", src_url, True)
 
         if "faqtable" in html or b"author_area" in html:
-            return ("html", None)
+            return ("html", None, False)
 
-        return ("unknown", "")
+        return ("unknown", "", True)
 
 def determine_dir_name(url):
     """ Given an URL to a list of FAQs, try to determine a directory name from
