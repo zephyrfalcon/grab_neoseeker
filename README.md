@@ -38,3 +38,6 @@ defunct. It was an arms race anyway and eventually GameFAQs removed the
 original names of their ASCII FAQs. Not sure if NeoSeeker will go the
 same way eventually...)
 
+Also, the code isn't great, but I am reluctant to spend too much time on it,
+considering how easily this kind of scraper breaks due to changes in the target
+website.
