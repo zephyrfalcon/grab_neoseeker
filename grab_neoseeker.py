@@ -98,6 +98,7 @@ class NeoSeekerGrabber:
                 f.write(data)
 
         filetype, resource, isbinary = self.determine_file_type(data)
+        print("Filetype:", filetype, "binary?", isbinary)
 
         if self.options.only_binaries and not isbinary:
             print("File", url, "is not a binary; skipped")
@@ -159,13 +160,6 @@ class NeoSeekerGrabber:
             resource, and a boolean indicating whether this file is considered 
             "binary" or not. 
         """
-        if "view source" in html:
-            soup = BS(html, 'html.parser')
-            links = soup.find_all('a')
-            links = [link for link in links if "view source" in link.text]
-            src_url = links[0]['href']
-            return ("text", src_url, False)
-
         if "(GIF)" in html:
             soup = BS(html, 'html.parser')
             div = soup.find('div', id='faqtxt')
@@ -194,7 +188,14 @@ class NeoSeekerGrabber:
             src_url = img['src']
             return ("pdf", src_url, True)
 
-        if "faqtable" in html or b"author_area" in html:
+        if "view source" in html:
+            soup = BS(html, 'html.parser')
+            links = soup.find_all('a')
+            links = [link for link in links if "view source" in link.text]
+            src_url = links[0]['href']
+            return ("text", src_url, False)
+
+        if "faqtable" in html or "author_area" in html:
             return ("html", None, False)
 
         return ("unknown", "", True)
