@@ -19,7 +19,7 @@ def filename_from_url(url):
     return os.path.basename(url_parts.path)
 
 # dodgy default cookie. may need to be replaced
-DEFAULT_COOKIE = "ns=1t2ilpdrkr49s1tbl9rgp801b5;_gaost=.nv=1.r=www_d_google_d_com.rk=null;_gaos=.gaos_r=www_d_google_d_com.mc=(no)|(no)|(no).gaos_k=null.pc=1;_nrlsk=nrlsk_c=3.et=1466645187; _gat=1;_ga=GA1.2.389298541.1466645409"
+DEFAULT_COOKIE = "__cfduid=ddab036171c89033439c2eee554b588931555685734; ns=mpf9b4hkn1da85i4k7gbmg5437; __uzma=5cdd8fed-3bb1-4def-9117-8768e6ef7b0e; __uzmb=1555685734; __uzmc=720473481366; __uzmd=1555686127"
 
 class Options:
     debug = False
@@ -52,7 +52,7 @@ class NeoSeekerGrabber:
             "Connection": "keep-alive",
             "Cookie": DEFAULT_COOKIE, 
             "Upgrade-Insecure-Requests": "1",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36",
         }
         #print("Fetching:", url, "with origin:", origin)
         r = requests.get(url, headers=headers)
